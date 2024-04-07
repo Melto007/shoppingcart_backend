@@ -12,14 +12,4 @@ class UserSerializer(ModelSerializer):
         extra_kwargs = {'password': { 'write_only': True }}
 
     def create(self, validated_data):
-        name = validated_data.pop('username', None)
-
-        if name is None:
-            raise exceptions.APIException('Username is required')
-
-        splitname = name.replace(" ", "")
-
-        if get_user_model().objects.filter(username=splitname).exists():
-            raise exceptions.APIException('Username is exists')
-
-        return get_user_model().objects.create_user(username=splitname, **validated_data)
+        return get_user_model().objects.create_user(**validated_data)
