@@ -4,6 +4,10 @@ from rest_framework import (
     status
 )
 from rest_framework.response import Response
+from .serializers import (
+    UserSerializer
+)
+from django.contrib.auth import get_user_model
 
 """
     method: POST
@@ -14,12 +18,19 @@ class UserViewset(
     mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
+    serializer_class = UserSerializer
+    queryset = get_user_model().objects.all()
+
     def create(self, request):
         try:
             data = request.data
 
+            serializer = self.get_serializer(data=data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+
             response = {
-                'data': data,
+                'data': 'user created successfully',
                 'status': status.HTTP_200_OK
             }
 
@@ -30,6 +41,3 @@ class UserViewset(
                 'status': status.HTTP_400_BAD_REQUEST
             }
             return Response(response)
-
-    def list(self, request):
-        return Response('success')
