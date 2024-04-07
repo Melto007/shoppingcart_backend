@@ -5,3 +5,4 @@ python-dotenv==1.0.0
 PyJWT==2.8.0
 django-cors-headers==4.3.1
 cloudinary===1.39.0
+pymysql

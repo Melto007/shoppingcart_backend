@@ -11,6 +11,15 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import os
+
+import pymysql
+
+pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,10 +29,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-*&g9%sx3b2!4qvx)bb)9rqatx4auypf^3w+6h!5=_h8yl5jw0p'
+SECRET_KEY = os.environ['DJANGO_SECURE']
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ['DEBUG'])
 
 ALLOWED_HOSTS = []
 
@@ -40,7 +49,8 @@ INSTALLED_APPS = [
 
     'rest_framework',
 
-    'core.apps.CoreConfig'
+    'core.apps.CoreConfig',
+    'user.apps.UserConfig'
 ]
 
 MIDDLEWARE = [
@@ -77,12 +87,40 @@ WSGI_APPLICATION = 'app.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+DATABASE_NAME = os.environ['DATABASE_NAME']
+DATABASE_USER = os.environ['DATABASE_USER']
+DATABASE_PASSWORD = os.environ['DATABASE_PASSWORD']
+DATABASE_HOST = os.environ['DATABASE_HOST']
+DATABASE_PORT = os.environ['DATABASE_PORT']
+DB_AVAILABLE = all([
+    DATABASE_NAME,
+    DATABASE_USER,
+    DATABASE_PASSWORD,
+    DATABASE_HOST,
+    DATABASE_PORT
+])
+
+DB_READY = str(os.environ['DB_READY']) == "1"
+
+if DB_AVAILABLE and DB_READY:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': DATABASE_NAME,
+            'USER': DATABASE_USER,
+            'PASSWORD': DATABASE_PASSWORD,
+            'DATABASE_HOST': DATABASE_HOST,
+            'DATABASE_PORT': DATABASE_PORT
+        }
     }
-}
+
 
 
 # Password validation
