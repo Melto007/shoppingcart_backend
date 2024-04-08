@@ -1,13 +1,19 @@
 from rest_framework import (
-    generics,
+    viewsets,
     mixins,
-    status
+    status,
+    exceptions
 )
 from rest_framework.response import Response
 from .serializers import (
     UserSerializer
 )
+from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
+from utils.authentication import (
+    create_access_token,
+    create_refresh_token
+)
 
 """
     method: POST
@@ -15,8 +21,8 @@ from django.contrib.auth import get_user_model
     params: username, email, phone number, password
 """
 class UserViewset(
-    mixins.ListModelMixin,
-    generics.GenericViewSet
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
 ):
     serializer_class = UserSerializer
     queryset = get_user_model().objects.all()
@@ -49,10 +55,48 @@ class UserViewset(
 """
 class LoginViewSet(
     mixins.CreateModelMixin,
-    generics.GenericAPIView
+    viewsets.GenericViewSet
 ):
     serializer_class = UserSerializer
     queryset = get_user_model().objects.all()
 
     def create(self, request):
-        pass
+        try:
+            data = request.data
+            email = data.get('email', None)
+            password = data.get('password', None)
+
+            queryset = get_object_or_404(self.queryset, email=email)
+
+            if not queryset:
+                raise exceptions.AuthenticationFailed('Invalid credential')
+
+            if not queryset.check_password(password):
+                raise exceptions.AuthenticationFailed('Invalid credential')
+
+            access_token = create_access_token(queryset.id)
+            refresh_token = create_refresh_token(queryset.id)
+
+            response = Response()
+
+            response.set_cookie(
+                key='refresh_token',
+                value=refresh_token,
+                httponly=True
+            )
+
+            datas = {
+                'access_token': access_token,
+            }
+
+            response.data = {
+                'data': datas,
+                'status': status.HTTP_200_OK
+            }
+            return response
+        except Exception as e:
+            response = {
+                'data': e.args,
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return Response(response)
