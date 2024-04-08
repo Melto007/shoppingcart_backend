@@ -1,3 +1,8 @@
 from django.contrib import admin
+from core.models import (
+    User,
+    TokenUser
+)
 
-# Register your models here.
+admin.site.register(User)
+admin.site.register(TokenUser)

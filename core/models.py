@@ -55,3 +55,13 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = UserManager()
+
+class TokenUser(models.Model):
+    user = models.IntegerField(null=True, blank=True)
+    token = models.CharField(max_length=255, null=True, blank=True)
+    expired_at = models.DateTimeField(default=datetime.datetime.now() + datetime.timedelta(days=7))
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.token)

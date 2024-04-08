@@ -6,14 +6,20 @@ from rest_framework import (
 )
 from rest_framework.response import Response
 from .serializers import (
-    UserSerializer
+    UserSerializer,
+    TokenSerializer
 )
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from utils.authentication import (
     create_access_token,
-    create_refresh_token
+    create_refresh_token,
+    refresh_decode_token
 )
+from core.models import (
+    TokenUser
+)
+import datetime
 
 """
     method: POST
@@ -63,6 +69,7 @@ class LoginViewSet(
     def create(self, request):
         try:
             data = request.data
+
             email = data.get('email', None)
             password = data.get('password', None)
 
@@ -76,6 +83,8 @@ class LoginViewSet(
 
             access_token = create_access_token(queryset.id)
             refresh_token = create_refresh_token(queryset.id)
+
+            TokenUser.objects.create(user=queryset.id, token=refresh_token)
 
             response = Response()
 
@@ -100,3 +109,40 @@ class LoginViewSet(
                 'status': status.HTTP_404_NOT_FOUND
             }
             return Response(response)
+
+"""
+    method: POST
+    description: Refresh token
+"""
+class RefreshViewset(
+    mixins.CreateModelMixin,
+    viewsets.GenericViewSet
+):
+    serializer_class = TokenSerializer
+    queryset = TokenUser.objects.all()
+
+    def create(self, request):
+        refresh_token = request.COOKIES.get('refresh_token', None)
+
+        id = refresh_decode_token(refresh_token)
+
+        if not self.queryset.filter(
+            user=id,
+            token=refresh_token,
+            expired_at__gt=datetime.datetime.now(tz=datetime.timezone.utc)
+        ).exists():
+            self.queryset.filter(
+                user=id,
+                token=refresh_token,
+                expired_at__gt=datetime.datetime.now(tz=datetime.timezone.utc)
+            ).delete()
+            raise exceptions.AuthenticationFailed('Unauthorized User')
+
+        access_token = create_access_token(id)
+
+        response = {
+            'data': access_token,
+            'status': status.HTTP_200_OK
+        }
+
+        return Response(response)
