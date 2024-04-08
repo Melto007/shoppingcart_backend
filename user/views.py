@@ -1,5 +1,5 @@
 from rest_framework import (
-    viewsets,
+    generics,
     mixins,
     status
 )
@@ -16,7 +16,7 @@ from django.contrib.auth import get_user_model
 """
 class UserViewset(
     mixins.ListModelMixin,
-    viewsets.GenericViewSet
+    generics.GenericViewSet
 ):
     serializer_class = UserSerializer
     queryset = get_user_model().objects.all()
@@ -41,3 +41,18 @@ class UserViewset(
                 'status': status.HTTP_400_BAD_REQUEST
             }
             return Response(response)
+
+"""
+    method: POST
+    params: email, password
+    description: post - login user
+"""
+class LoginViewSet(
+    mixins.CreateModelMixin,
+    generics.GenericAPIView
+):
+    serializer_class = UserSerializer
+    queryset = get_user_model().objects.all()
+
+    def create(self, request):
+        pass

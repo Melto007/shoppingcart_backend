@@ -112,7 +112,7 @@ DB_READY = str(os.environ['DB_READY']) == "1"
 if DB_AVAILABLE and DB_READY:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.mysql',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': DATABASE_NAME,
             'USER': DATABASE_USER,
             'PASSWORD': DATABASE_PASSWORD,
