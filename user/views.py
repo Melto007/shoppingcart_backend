@@ -122,27 +122,38 @@ class RefreshViewset(
     queryset = TokenUser.objects.all()
 
     def create(self, request):
-        refresh_token = request.COOKIES.get('refresh_token', None)
+        try:
+            refresh_token = request.COOKIES.get('refresh_token', None)
 
-        id = refresh_decode_token(refresh_token)
+            id = refresh_decode_token(refresh_token)
 
-        if not self.queryset.filter(
-            user=id,
-            token=refresh_token,
-            expired_at__gt=datetime.datetime.now(tz=datetime.timezone.utc)
-        ).exists():
-            self.queryset.filter(
+            if not self.queryset.filter(
                 user=id,
                 token=refresh_token,
                 expired_at__gt=datetime.datetime.now(tz=datetime.timezone.utc)
-            ).delete()
-            raise exceptions.AuthenticationFailed('Unauthorized User')
+            ).exists():
+                self.queryset.filter(
+                    user=id,
+                    token=refresh_token,
+                    expired_at__gt=datetime.datetime.now(tz=datetime.timezone.utc)
+                ).delete()
+                raise exceptions.AuthenticationFailed('Unauthorized User')
 
-        access_token = create_access_token(id)
+            access_token = create_access_token(id)
 
-        response = {
-            'data': access_token,
-            'status': status.HTTP_200_OK
-        }
+            datas = {
+                'access_token': access_token
+            }
 
-        return Response(response)
+            response = {
+                'data': datas,
+                'status': status.HTTP_200_OK
+            }
+
+            return Response(response)
+        except Exception as e:
+            response = {
+                'data': e.args,
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return Response(response)
