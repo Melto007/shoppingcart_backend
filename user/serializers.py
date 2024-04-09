@@ -21,3 +21,8 @@ class TokenSerializer(ModelSerializer):
     class Meta:
         model = TokenUser
         fields = ['id', 'token', 'expired_at']
+
+class ProfileSerializer(ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ['id', 'username', 'email', 'password', 'phone_number', 'company_name']

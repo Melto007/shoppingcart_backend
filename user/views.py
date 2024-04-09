@@ -7,14 +7,16 @@ from rest_framework import (
 from rest_framework.response import Response
 from .serializers import (
     UserSerializer,
-    TokenSerializer
+    TokenSerializer,
+    ProfileSerializer
 )
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from utils.authentication import (
     create_access_token,
     create_refresh_token,
-    refresh_decode_token
+    refresh_decode_token,
+    JWTAuthentication
 )
 from core.models import (
     TokenUser
@@ -91,7 +93,9 @@ class LoginViewSet(
             response.set_cookie(
                 key='refresh_token',
                 value=refresh_token,
-                httponly=True
+                httponly=True,
+                secure=True,
+                samesite='None'
             )
 
             datas = {
@@ -123,7 +127,7 @@ class RefreshViewset(
 
     def create(self, request):
         try:
-            refresh_token = request.COOKIES.get('refresh_token', None)
+            refresh_token = request.COOKIES.get('refresh_token', False)
 
             id = refresh_decode_token(refresh_token)
 
@@ -150,6 +154,35 @@ class RefreshViewset(
                 'status': status.HTTP_200_OK
             }
 
+            return Response(response)
+        except Exception as e:
+            response = {
+                'data': e.args,
+                'status': status.HTTP_404_NOT_FOUND
+            }
+            return Response(response)
+
+"""
+    method: List
+    description: View profile user
+"""
+class ProfileViewset(
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
+    authentication_classes = [JWTAuthentication]
+    serializer_class = ProfileSerializer
+    queryset = get_user_model().objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            serializer = self.get_serializer(instance)
+
+            response = {
+                'data': serializer.data,
+                'status': status.HTTP_200_OK
+            }
             return Response(response)
         except Exception as e:
             response = {
