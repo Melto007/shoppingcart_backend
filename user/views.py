@@ -93,9 +93,7 @@ class LoginViewSet(
             response.set_cookie(
                 key='refresh_token',
                 value=refresh_token,
-                httponly=True,
-                secure=True,
-                samesite='None'
+                httponly=True
             )
 
             datas = {
@@ -128,6 +126,7 @@ class RefreshViewset(
     def create(self, request):
         try:
             refresh_token = request.COOKIES.get('refresh_token', False)
+            print(refresh_token)
 
             id = refresh_decode_token(refresh_token)
 
@@ -167,17 +166,17 @@ class RefreshViewset(
     description: View profile user
 """
 class ProfileViewset(
-    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
     authentication_classes = [JWTAuthentication]
     serializer_class = ProfileSerializer
     queryset = get_user_model().objects.all()
 
-    def retrieve(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         try:
-            instance = self.get_object()
-            serializer = self.get_serializer(instance)
+            instance = self.queryset.get(email=request.user)
+            serializer = self.get_serializer(instance, many=False)
 
             response = {
                 'data': serializer.data,
